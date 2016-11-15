@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JusFLIP</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'store/bootstrap/css/bootstrap.css' %}"/>
+    <style>
+        .product{
+        border: 1px solid #eee;
+        margin: 5px;
+        padding: 5px;
+        }
+        .product img{
+        margin: auto;
+        height: 333px;
+        }
+        .product .title{
+        font-size: 125%;
+        }
+        .product .out-of-stock{
+        position: absolute;
+        top:70%;
+        }
+        .product .discount{
+        position: absolute;
+        top:0%;
+        left:80%;
+        }
+        body { padding-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav class="navbar navbar-default">
+        <a href="#" class="navbar-brand" style=";">JusFLIP</a>
+    </nav>
+</div>
+<div class="container" style="">
+    <div class="row" style="">
+        {% for product in products %}
+        <div class="col-xs-12 col-sm-6 col-md-4">
+            <div class="product">
+                <center><span class="title" title="{{product.title}}">{{product.title | slice:":30"}}</span></center>
+                <img class="img-responsive" src="{{product.thumbnail}}">
+                {%if product.stock != "In Stock" %}
+                <div class="label label-danger out-of-stock">
+                    <span>Sold Out</span>
+                </div>
+                {% endif %}
+                <div style="margin-top:10px;">
+                    <center>
+                        <strike style="color:#878787">Rs.{{product.mrp}}</strike>
+                        <span style="font-style:bold; font-size:100%" class="label label-success">Rs.{{product.available_price}}</span>
+                        <span style="font-size:85%">{{product.discount}}% off</span>
+                    </center>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <nav aria-label="...">
+        <ul class="pager">
+            <li><a href="#">Previous</a></li>
+            <li><a href="#">Next</a></li>
+        </ul>
+    </nav>
+</body>
+</html>
