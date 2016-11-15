@@ -25,8 +25,8 @@ class ProductView(View):
 
     def get(self, request):
 
-        page = request.GET.get("page", 1)  # default page: 1
-        items_per_page = request.GET.get("items_per_page", 10)  # default items per page: 10
+        page_str = request.GET.get("page", 1)  # default page: 1
+        items_per_page = request.GET.get("items_per_page", 24)  # default items per page: 18
         brand = request.GET.get("brand")
         category = request.GET.get('category')
         price_range_low_str = request.GET.get('price_range_low')
@@ -35,6 +35,7 @@ class ProductView(View):
         is_in_stock = True if "true" == is_in_stock_str else False
 
         try:
+            page = int(page_str)
             product_qs = Product.objects.filter()
             if brand:
                 product_qs = product_qs.filter(brand=brand.strip())
@@ -56,6 +57,9 @@ class ProductView(View):
                     raise ValidationError("Invalid price_range_high: {}".format(price_range_high_str))
 
             paginator = Paginator(product_qs, items_per_page)
+            page_information = {
+                "next_page": "/store/product/?page={}".format(min(paginator.num_pages, page + 1)),
+                "previous_page": "/store/product/?page={}".format(max(1, page - 1))}
             try:
                 products = paginator.page(page)
             except PageNotAnInteger:
@@ -64,7 +68,10 @@ class ProductView(View):
                 products = paginator.page(paginator.num_pages)
 
             product_json = serializers.serialize("json", products, fields=Product.SERIALIZATION_FIELDS)
-            return HttpResponse(product_json)
+            products = json.loads(product_json)
+            response_obj = {"products": products, "page_info": page_information}
+            response = json.dumps(response_obj)
+            return HttpResponse(response)
         except ValidationError as e:
             logging.exception(e)
             bad_request_response_obj = {"message": e.message}
@@ -86,21 +93,31 @@ class SearchView(View):
 
     def get(self, request):
         search_key = request.GET.get("q", "")
-        page = request.GET.get("page", 1)  # default page: 1
-        items_per_page = request.GET.get("items_per_page", 10)  # default items per page: 10
+        page_str = request.GET.get("page", 1)  # default page: 1
+        items_per_page = request.GET.get("items_per_page", 24)  # default items per page: 10
         try:
+            page = int(page_str)
             # Queries the search backend (ElasticSearch) for the relevant keyword
             search_qs = SearchQuerySet().filter(content=search_key)
             paginator = Paginator(search_qs, items_per_page)
+            page_information = {
+                "next_page": "/store/product/search/?q={}&page={}".format(search_key,
+                                                                          min(paginator.num_pages, page + 1)),
+                "previous_page": "/store/product/search/?q={}&page={}".format(search_key, max(1, page - 1))}
             try:
                 product_sqs = paginator.page(page)
             except PageNotAnInteger:
                 products_sqs = paginator.page(1)
             except EmptyPage:
                 products_sqs = paginator.page(paginator.num_pages)
+            except Exception as e:
+                return
             products = self.search_to_model_queryset_gen(product_sqs)
             product_json = serializers.serialize('json', products, fields=Product.SERIALIZATION_FIELDS)
-            return HttpResponse(product_json)
+            products = json.loads(product_json)
+            response_obj = {"products": products, "page_info": page_information}
+            response = json.dumps(response_obj)
+            return HttpResponse(response)
         except Exception as e:
             logging.exception(e)
             bad_request_response_obj = {"message": "Something went wrong. Contact the Administrator"}
@@ -120,7 +137,7 @@ class SearchView(View):
 def index(request):
     search_key = request.GET.get("q", "")
     page = request.GET.get("page", 1)  # default page: 1
-    items_per_page = request.GET.get("items_per_page", 10)  # default items per page: 10
+    items_per_page = request.GET.get("items_per_page", 20)  # default items per page: 10
     try:
         # Queries the search backend (ElasticSearch) for the relevant keyword
         search_qs = SearchQuerySet().filter(content=search_key)
@@ -133,7 +150,7 @@ def index(request):
             products_sqs = paginator.page(paginator.num_pages)
         products = SearchView().search_to_model_queryset_gen(product_sqs)
         template = loader.get_template('store/index.html')
-        return HttpResponse(template.render({"products": products}, request))
+        return HttpResponse(template.render({}, request))
     except Exception as e:
         logging.exception(e)
         bad_request_response_obj = {"message": "Something went wrong. Contact the Administrator"}

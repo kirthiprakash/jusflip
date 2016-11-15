@@ -1,0 +1,19 @@
+<div class="col-xs-12 col-sm-6 col-md-4">
+    <div class="product">
+        <center><span class="title" title="{{product.fields.title}}">{{product.fields.title_short}}</span>
+        </center>
+        <img class="img-responsive" src="{{product.fields.thumbnail}}">
+         {{#product.fields.no_stock}}
+                <div class="label label-danger out-of-stock">
+                    <span>Sold Out</span>
+                </div>
+         {{/product.fields.no_stock }}
+        <div style="margin-top:10px;">
+            <center>
+                <strike style="color:#878787">Rs.{{product.fields.mrp}}</strike>
+                <span style="font-style:bold; font-size:100%" class="label label-success">Rs.{{product.fields.available_price}}</span>
+                <span style="font-size:85%">{{product.fields.discount}}% off</span>
+            </center>
+        </div>
+    </div>
+</div>
