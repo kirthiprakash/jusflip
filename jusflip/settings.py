@@ -89,9 +89,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'jusflip',
-	'USER': 'jusflip_pg',
-	'PASSWORD': 'jusflip_pg',
-	'HOST': 'localhost'
+        'USER': 'jusflip_pg',
+        'PASSWORD': 'jusflip_pg',
+        'HOST': 'localhost'
     }
 }
 
@@ -147,14 +147,11 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
+        'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
+        'URL': os.environ['ELASTIC_SEARCH_HOST'],
+        'INDEX_NAME': 'haystack',
     },
+    'db': {
+        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
+    }
 }
-
-# HAYSTACK_CONNECTIONS = {
-#     'default': {
-#         'ENGINE': 'haystack.backends.elasticsearch_backend.ElasticsearchSearchEngine',
-#         'URL': 'http://127.0.0.1:9200/',
-#         'INDEX_NAME': 'haystack',
-#     },
-# }

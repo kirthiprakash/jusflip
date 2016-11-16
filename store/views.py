@@ -3,6 +3,7 @@ import json
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.template import loader
+from elasticsearch import ConnectionError
 from haystack.query import SearchQuerySet
 from django.db.models import Count
 import logging
@@ -101,7 +102,14 @@ class SearchView(View):
         try:
             page = int(page_str)
             # Queries the search backend (ElasticSearch) for the relevant keyword
-            search_qs = SearchQuerySet().filter(content=search_key)
+            try:
+                search_qs = SearchQuerySet().filter(content=search_key)
+            except Exception as e:
+                # fall back to simple engine
+                search_qs = SearchQuerySet().using('db').filter(content=search_key)
+            # fallback to simple engine
+            if not search_qs.count():
+                search_qs = SearchQuerySet().using('db').filter(content=search_key)
             paginator = Paginator(search_qs, items_per_page)
             page_information = {
                 "next_page": "/store/product/search/?q={}&page={}".format(search_key,
