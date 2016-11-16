@@ -53,8 +53,13 @@ Configure database and search backend in settings.py
       }
     }
 
+Run Django migrations to create necassary tables in the database. Load sample products from fixtures. Build Index. Ready to launch.
 
     >(jusflip)cd jusflip
+    >(jusflip)python manage.py makemigrations
+    >(jusflip)python manage.py migrate
+    >(jusflip)python manage.py loaddata store/fixtures/jusflip.json
+    >(jusflip)python manage.py rebuild_index
     >(jusflip)python manage.py runserver
     System check identified no issues (0 silenced).
     November 16, 2016 - 19:25:51
