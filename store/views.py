@@ -2,9 +2,9 @@ import json
 
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from django.shortcuts import render
 from django.template import loader
 from haystack.query import SearchQuerySet
+from django.db.models import Count
 import logging
 
 # Create your views here.
@@ -27,39 +27,42 @@ class ProductView(View):
 
         page_str = request.GET.get("page", 1)  # default page: 1
         items_per_page = request.GET.get("items_per_page", 24)  # default items per page: 18
-        brand = request.GET.get("brand")
-        category = request.GET.get('category')
-        price_range_low_str = request.GET.get('price_range_low')
-        price_range_high_str = request.GET.get('price_range_high')
+        brand_list = request.GET.getlist("brand")
+        category_list = request.GET.getlist('category')
+        price_range_low_str = request.GET.getlist('price_range_low')
+        price_range_high_str = request.GET.getlist('price_range_high')
         is_in_stock_str = request.GET.get('is_in_stock', "false")
         is_in_stock = True if "true" == is_in_stock_str else False
 
         try:
             page = int(page_str)
             product_qs = Product.objects.filter()
-            if brand:
-                product_qs = product_qs.filter(brand=brand.strip())
-            if category:
-                product_qs = product_qs.filter(category=category.strip())
+            if brand_list:
+                product_qs = product_qs.filter(brand__in=brand_list)
+            if category_list:
+                product_qs = product_qs.filter(category__in=category_list)
             if is_in_stock:
                 product_qs = product_qs.filter(stock="In Stock")
             if price_range_low_str:
                 try:
-                    price_range_low = float(price_range_low_str)
+                    price_range_low = min([float(el) for el in price_range_low_str])
+                    print price_range_low
                     product_qs = product_qs.filter(available_price__gte=price_range_low)
                 except ValueError as e:
                     raise ValidationError("Invalid price_range_low: {}".format(price_range_low_str))
             if price_range_high_str:
                 try:
-                    price_range_high = float(price_range_high_str)
+                    price_range_high = max([float(el) for el in price_range_high_str])
+                    print price_range_high
                     product_qs = product_qs.filter(available_price__lte=price_range_high)
                 except ValueError as e:
                     raise ValidationError("Invalid price_range_high: {}".format(price_range_high_str))
 
             paginator = Paginator(product_qs, items_per_page)
+            query_path = request.GET.urlencode()
             page_information = {
-                "next_page": "/store/product/?page={}".format(min(paginator.num_pages, page + 1)),
-                "previous_page": "/store/product/?page={}".format(max(1, page - 1))}
+                "next_page": "/store/product/?page={}&{}".format(min(paginator.num_pages, page + 1), query_path),
+                "previous_page": "/store/product/?page={}&{}".format(max(1, page - 1), query_path)}
             try:
                 products = paginator.page(page)
             except PageNotAnInteger:
@@ -134,21 +137,19 @@ class SearchView(View):
             yield item.object
 
 
+class FilterOptionView(View):
+    def get(self, request):
+        product_categories = Product.objects.all().values('category').distinct().order_by('category')[0:50]
+        brand_categories = Product.objects.all().values('brand').distinct().order_by('brand')[0:200]
+        response_obj = {}
+        response_obj['categories'] = list(product_categories)
+        response_obj['brands'] = list(brand_categories)
+        response = json.dumps(response_obj)
+        return HttpResponse(response)
+
+
 def index(request):
-    search_key = request.GET.get("q", "")
-    page = request.GET.get("page", 1)  # default page: 1
-    items_per_page = request.GET.get("items_per_page", 20)  # default items per page: 10
     try:
-        # Queries the search backend (ElasticSearch) for the relevant keyword
-        search_qs = SearchQuerySet().filter(content=search_key)
-        paginator = Paginator(search_qs, items_per_page)
-        try:
-            product_sqs = paginator.page(page)
-        except PageNotAnInteger:
-            products_sqs = paginator.page(1)
-        except EmptyPage:
-            products_sqs = paginator.page(paginator.num_pages)
-        products = SearchView().search_to_model_queryset_gen(product_sqs)
         template = loader.get_template('store/index.html')
         return HttpResponse(template.render({}, request))
     except Exception as e:

@@ -28,17 +28,27 @@ body {
     padding-top: 10px;
 }
 
-@media (min-width: 991px){
-	.mobile-header{
-		display: none;
-	}
-}
 
 @media (max-width: 768px){
 .store-filter{
 	display:none;
 	}
+}
 
 .store-filter{
     border: 1px solid #eee;
+}
+
+.panel-title > a{
+    display: block;
+    padding: 10px 15px;
+    margin: -10px -15px;
+    text-decoration:none;
+}
+
+.filter-option{
+    margin-left: 5px;
+    font-size: 140%;
+    display:inline-block;
+    line-height: 2em
 }
