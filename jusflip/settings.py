@@ -26,7 +26,7 @@ SECRET_KEY = '*7$xv!8$yb&*j4y3&&39v144h24n)+zed1^+bqpv1sqe3y%6s4'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.1.33']
+ALLOWED_HOSTS = ['192.168.1.33', 'jusflip.herokuapp.com']
 
 # Application definition
 
@@ -125,6 +125,10 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# Update database configuration with $DATABASE_URL.
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
